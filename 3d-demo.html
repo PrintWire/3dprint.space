@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Print Space — Interactive 3D Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    font-family: 'Nunito', sans-serif; 
+    background: #0a0a0f; 
+    color: #fff; 
+    overflow-x: hidden;
+  }
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+    z-index: 10;
+  }
+  .header h1 {
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 800;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+  .header p {
+    color: #888;
+    font-size: 16px;
+  }
+  #canvas-container {
+    width: 100%;
+    height: 70vh;
+    position: relative;
+  }
+  canvas { display: block; }
+  .controls-info {
+    text-align: center;
+    padding: 20px;
+    color: #555;
+    font-size: 13px;
+  }
+  .info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 40px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .card h3 {
+    color: #00d4ff;
+    margin-bottom: 8px;
+    font-size: 18px;
+  }
+  .card p { color: #aaa; font-size: 14px; line-height: 1.6; }
+  .loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #00d4ff;
+    font-size: 18px;
+    z-index: 5;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="header">
+  <h1>3D Print Space</h1>
+  <p>Interactive 3D Web Experience Demo</p>
+</div>
+
+<div id="canvas-container">
+  <div class="loading" id="loading">Loading 3D scene...</div>
+</div>
+
+<div class="controls-info">
+  🖱️ Click + drag to rotate · Scroll to zoom · Right-click to pan
+</div>
+
+<div class="info-cards">
+  <div class="card">
+    <h3>🎨 Three.js</h3>
+    <p>Powered by Three.js — the most popular 3D library for the web. Renders in real-time using WebGL.</p>
+  </div>
+  <div class="card">
+    <h3>📦 GLB Models</h3>
+    <p>Supports GLTF/GLB format — the standard for web 3D. Compressed with Draco for fast loading.</p>
+  </div>
+  <div class="card">
+    <h3>📱 Mobile Ready</h3>
+    <p>Responsive and touch-enabled. Works on phones, tablets, and desktops.</p>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const container = document.getElementById('canvas-container');
+const loading = document.getElementById('loading');
+
+// Scene setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0f);
+scene.fog = new THREE.Fog(0x0a0a0f, 8, 20);
+
+const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
+camera.position.set(3, 2, 4);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.5;
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
+
+const pointLight1 = new THREE.PointLight(0x00d4ff, 2, 10);
+pointLight1.position.set(-3, 2, 0);
+scene.add(pointLight1);
+
+const pointLight2 = new THREE.PointLight(0x7b2ff7, 2, 10);
+pointLight2.position.set(3, -1, 2);
+scene.add(pointLight2);
+
+// Grid
+const gridHelper = new THREE.GridHelper(20, 40, 0x222244, 0x111122);
+scene.add(gridHelper);
+
+// Demo objects — a 3D printed-looking layered object
+const group = new THREE.Group();
+
+// Base platform
+const baseMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, metalness: 0.3, roughness: 0.7 });
+const base = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.1, 64), baseMat);
+group.add(base);
+
+// Layered "print" — stacked rings to simulate FDM layers
+const layerMat = new THREE.MeshStandardMaterial({ 
+  color: 0x00d4ff, metalness: 0.4, roughness: 0.3,
+  emissive: 0x003355, emissiveIntensity: 0.2
+});
+
+for (let i = 0; i < 30; i++) {
+  const y = 0.05 + i * 0.06;
+  const radius = 0.8 + Math.sin(i * 0.3) * 0.3;
+  const layer = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, 0.03, 8, 64),
+    layerMat
+  );
+  layer.position.y = y;
+  layer.rotation.x = Math.PI / 2;
+  group.add(layer);
+}
+
+// Inner structure 
+const innerMat = new THREE.MeshStandardMaterial({
+  color: 0x7b2ff7, metalness: 0.6, roughness: 0.2,
+  emissive: 0x220055, emissiveIntensity: 0.3
+});
+
+const innerGeo = new THREE.IcosahedronGeometry(0.5, 2);
+const inner = new THREE.Mesh(innerGeo, innerMat);
+inner.position.y = 1.0;
+group.add(inner);
+
+scene.add(group);
+loading.style.display = 'none';
+
+// Animate
+function animate() {
+  requestAnimationFrame(animate);
+  
+  // Gentle float on inner shape
+  inner.rotation.x += 0.005;
+  inner.rotation.y += 0.008;
+  inner.position.y = 1.0 + Math.sin(Date.now() * 0.001) * 0.1;
+  
+  // Pulse lights
+  pointLight1.intensity = 2 + Math.sin(Date.now() * 0.002) * 0.5;
+  pointLight2.intensity = 2 + Math.cos(Date.now() * 0.002) * 0.5;
+  
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize handler
+window.addEventListener('resize', () => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
+</script>
+
+</body>
+</html>
