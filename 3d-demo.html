@@ -136,7 +136,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 3.0;
+renderer.toneMappingExposure = 1.4;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
@@ -188,11 +188,11 @@ loader.load(
   (gltf) => {
     const model = gltf.scene;
 
-    // Override all materials with a plain lit material to guarantee visibility
+    // Override all materials — original textures were black, use metallic gray
     const overrideMat = new THREE.MeshStandardMaterial({
-      color: 0xaaaaaa,
-      roughness: 0.6,
-      metalness: 0.1,
+      color: 0x8899aa,
+      roughness: 0.35,
+      metalness: 0.7,
       side: THREE.DoubleSide,
     });
     model.traverse((child) => {
