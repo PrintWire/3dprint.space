@@ -145,18 +145,26 @@ controls.autoRotate = true;
 controls.autoRotateSpeed = 1.5;
 
 // Lighting
-const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-directionalLight.position.set(5, 5, 5);
-scene.add(directionalLight);
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 3.0);
+dirLight1.position.set(5, 10, 5);
+scene.add(dirLight1);
 
-const pointLight1 = new THREE.PointLight(0x00d4ff, 2, 20);
+const dirLight2 = new THREE.DirectionalLight(0xffffff, 2.0);
+dirLight2.position.set(-5, 5, -5);
+scene.add(dirLight2);
+
+const dirLight3 = new THREE.DirectionalLight(0xffffff, 1.5);
+dirLight3.position.set(0, -5, 5);
+scene.add(dirLight3);
+
+const pointLight1 = new THREE.PointLight(0x00d4ff, 3, 50);
 pointLight1.position.set(-3, 2, 0);
 scene.add(pointLight1);
 
-const pointLight2 = new THREE.PointLight(0x7b2ff7, 2, 20);
+const pointLight2 = new THREE.PointLight(0x7b2ff7, 3, 50);
 pointLight2.position.set(3, -1, 2);
 scene.add(pointLight2);
 
