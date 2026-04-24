@@ -188,29 +188,15 @@ loader.load(
   (gltf) => {
     const model = gltf.scene;
 
-    // Force all meshes to use lit materials
+    // Override all materials with a plain lit material to guarantee visibility
+    const overrideMat = new THREE.MeshStandardMaterial({
+      color: 0xaaaaaa,
+      roughness: 0.6,
+      metalness: 0.1,
+      side: THREE.DoubleSide,
+    });
     model.traverse((child) => {
-      if (!child.isMesh) return;
-      const mats = Array.isArray(child.material) ? child.material : [child.material];
-      mats.forEach((mat, i) => {
-        // Replace unlit MeshBasicMaterial with MeshStandardMaterial
-        if (mat.isMeshBasicMaterial) {
-          const replacement = new THREE.MeshStandardMaterial({
-            color: mat.color,
-            map: mat.map,
-            roughness: 0.5,
-            metalness: 0.1,
-            side: THREE.DoubleSide,
-          });
-          if (Array.isArray(child.material)) child.material[i] = replacement;
-          else child.material = replacement;
-        } else {
-          // Render both sides so inverted normals still catch light
-          mat.side = THREE.DoubleSide;
-          if (mat.envMapIntensity !== undefined) mat.envMapIntensity = 2.0;
-          mat.needsUpdate = true;
-        }
-      });
+      if (child.isMesh) child.material = overrideMat;
     });
 
     // Auto-center and scale to fit the scene
