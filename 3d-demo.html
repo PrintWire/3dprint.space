@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3D Print Space — Interactive 3D Demo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { 
@@ -118,6 +119,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const container = document.getElementById('canvas-container');
 const loading = document.getElementById('loading');
@@ -135,7 +137,13 @@ renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+
+// Environment lighting — illuminates all PBR materials
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+pmremGenerator.dispose();
 
 // Controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -145,7 +153,7 @@ controls.autoRotate = true;
 controls.autoRotateSpeed = 1.5;
 
 // Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
 
 const dirLight1 = new THREE.DirectionalLight(0xffffff, 3.0);
@@ -156,15 +164,11 @@ const dirLight2 = new THREE.DirectionalLight(0xffffff, 2.0);
 dirLight2.position.set(-5, 5, -5);
 scene.add(dirLight2);
 
-const dirLight3 = new THREE.DirectionalLight(0xffffff, 1.5);
-dirLight3.position.set(0, -5, 5);
-scene.add(dirLight3);
-
-const pointLight1 = new THREE.PointLight(0x00d4ff, 3, 50);
+const pointLight1 = new THREE.PointLight(0x00d4ff, 2, 50);
 pointLight1.position.set(-3, 2, 0);
 scene.add(pointLight1);
 
-const pointLight2 = new THREE.PointLight(0x7b2ff7, 3, 50);
+const pointLight2 = new THREE.PointLight(0x7b2ff7, 2, 50);
 pointLight2.position.set(3, -1, 2);
 scene.add(pointLight2);
 
