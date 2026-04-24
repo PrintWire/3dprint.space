@@ -200,11 +200,13 @@ loader.load(
             map: mat.map,
             roughness: 0.5,
             metalness: 0.1,
+            side: THREE.DoubleSide,
           });
           if (Array.isArray(child.material)) child.material[i] = replacement;
           else child.material = replacement;
         } else {
-          // Boost env map response on existing PBR materials
+          // Render both sides so inverted normals still catch light
+          mat.side = THREE.DoubleSide;
           if (mat.envMapIntensity !== undefined) mat.envMapIntensity = 2.0;
           mat.needsUpdate = true;
         }
