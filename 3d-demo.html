@@ -116,6 +116,8 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const container = document.getElementById('canvas-container');
 const loading = document.getElementById('loading');
@@ -123,9 +125,9 @@ const loading = document.getElementById('loading');
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a0f);
-scene.fog = new THREE.Fog(0x0a0a0f, 8, 20);
+scene.fog = new THREE.Fog(0x0a0a0f, 20, 60);
 
-const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 200);
 camera.position.set(3, 2, 4);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -150,11 +152,11 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
-const pointLight1 = new THREE.PointLight(0x00d4ff, 2, 10);
+const pointLight1 = new THREE.PointLight(0x00d4ff, 2, 20);
 pointLight1.position.set(-3, 2, 0);
 scene.add(pointLight1);
 
-const pointLight2 = new THREE.PointLight(0x7b2ff7, 2, 10);
+const pointLight2 = new THREE.PointLight(0x7b2ff7, 2, 20);
 pointLight2.position.set(3, -1, 2);
 scene.add(pointLight2);
 
@@ -162,59 +164,47 @@ scene.add(pointLight2);
 const gridHelper = new THREE.GridHelper(20, 40, 0x222244, 0x111122);
 scene.add(gridHelper);
 
-// Demo objects — a 3D printed-looking layered object
-const group = new THREE.Group();
+// Load GLB model
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/libs/draco/');
 
-// Base platform
-const baseMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, metalness: 0.3, roughness: 0.7 });
-const base = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.1, 64), baseMat);
-group.add(base);
+const loader = new GLTFLoader();
+loader.setDRACOLoader(dracoLoader);
 
-// Layered "print" — stacked rings to simulate FDM layers
-const layerMat = new THREE.MeshStandardMaterial({ 
-  color: 0x00d4ff, metalness: 0.4, roughness: 0.3,
-  emissive: 0x003355, emissiveIntensity: 0.2
-});
-
-for (let i = 0; i < 30; i++) {
-  const y = 0.05 + i * 0.06;
-  const radius = 0.8 + Math.sin(i * 0.3) * 0.3;
-  const layer = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, 0.03, 8, 64),
-    layerMat
-  );
-  layer.position.y = y;
-  layer.rotation.x = Math.PI / 2;
-  group.add(layer);
-}
-
-// Inner structure 
-const innerMat = new THREE.MeshStandardMaterial({
-  color: 0x7b2ff7, metalness: 0.6, roughness: 0.2,
-  emissive: 0x220055, emissiveIntensity: 0.3
-});
-
-const innerGeo = new THREE.IcosahedronGeometry(0.5, 2);
-const inner = new THREE.Mesh(innerGeo, innerMat);
-inner.position.y = 1.0;
-group.add(inner);
-
-scene.add(group);
-loading.style.display = 'none';
+loader.load(
+  'assets/mega.glb',
+  (gltf) => {
+    const model = gltf.scene;
+    // Auto-center and scale to fit the scene
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    model.position.sub(center);
+    model.scale.setScalar(2.5 / maxDim);
+    scene.add(model);
+    // Position camera to frame the model
+    controls.target.set(0, 0, 0);
+    controls.update();
+    loading.style.display = 'none';
+  },
+  (xhr) => {
+    if (xhr.total) {
+      loading.textContent = `Loading… ${Math.round(xhr.loaded / xhr.total * 100)}%`;
+    }
+  },
+  (error) => {
+    loading.textContent = 'Failed to load model.';
+    console.error(error);
+  }
+);
 
 // Animate
 function animate() {
   requestAnimationFrame(animate);
-  
-  // Gentle float on inner shape
-  inner.rotation.x += 0.005;
-  inner.rotation.y += 0.008;
-  inner.position.y = 1.0 + Math.sin(Date.now() * 0.001) * 0.1;
-  
   // Pulse lights
   pointLight1.intensity = 2 + Math.sin(Date.now() * 0.002) * 0.5;
   pointLight2.intensity = 2 + Math.cos(Date.now() * 0.002) * 0.5;
-  
   controls.update();
   renderer.render(scene, camera);
 }
